@@ -14,6 +14,7 @@ This project will attempt to perform data acquisition using some webcam(s) on a 
 ### Progress
 1. Learn to process videos and webcam with opencv.
 2. Converted the basic kernels from opencv python version to opencv C++ version.
+3. Using the Onsets and Frames from the Magenta-Tensorflow framework, create a naive audio to MIDI converter which may be able to extract some helpful data. 
 
 ### Issues
 
