@@ -7,11 +7,16 @@ class Seq:
     END = 1
     PITCH = 2
 
-    def __init__(self, seq, frame_rate=30, resolution=(1080, 1920), scroll_time=5, ON=255):
-        if type(seq) is str:
-            seq = midi_io.midi_file_to_note_sequence(seq)
-        self.seq = sorted([(note.start_time, note.end_time, note.pitch - 21)
-                          for note in seq.notes])  # sort the notes
+    def __init__(self, seq=None, init_first=False, frame_rate=30, resolution=(1080, 1920), scroll_time=5, ON=255):
+        if seq is None:
+            if init_first:
+                raise ValueError("Cannot initialize the first frame when no sequence is provided.")
+            self.seq = []
+        else:
+            if type(seq) is str:
+                seq = midi_io.midi_file_to_note_sequence(seq)
+            self.seq = sorted([(note.start_time, note.end_time, note.pitch - 21)
+                            for note in seq.notes])  # sort the notes
 
         self.frame_rate = frame_rate
         self.rows = [np.zeros(resolution[1], dtype=np.uint8)
@@ -31,8 +36,9 @@ class Seq:
         self.widths = [resolution[1] // 88 - 5 for _ in range(88)]
 
         # Initialize first frame
-        for _ in range(frame_rate*scroll_time):
-            self.__next__()
+        if init_first:
+            for _ in range(int(frame_rate*scroll_time)):
+                self.__next__()
 
     def __iter__(self):
         """Python is dumb.
@@ -51,7 +57,7 @@ class Seq:
         """
         # Real program will probably use pointer hack
         # but here we'll just take the naive approach
-
+        
         # Update the frame
         self.frame = self.frame + 1
 
@@ -69,9 +75,8 @@ class Seq:
                     i = i + 1
 
             # Add the new notes being played
-            if self.seq:
-                while self.seq[0][Seq.START] <= time:
-                    self.cur_notes.append(self.seq.pop(0))
+            while self.seq and self.seq[0][Seq.START] <= time:
+                self.cur_notes.append(self.seq.pop(0))
 
             # Append the new rows
             new_row = np.zeros(self.rows[0].shape, dtype=np.uint8)
@@ -90,6 +95,12 @@ class Seq:
             float: Time this frame occurs in seconds.
         """
         return self.frame / self.frame_rate - self.scroll_time
+
+    def __add__(self, new_note_seq):
+        for note in new_note_seq.notes:
+            self.seq.append((note.start_time, note.end_time, note.pitch - 21))
+            
+
 
 
 if __name__ == '__main__':

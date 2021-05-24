@@ -44,18 +44,24 @@ class OnsetsFrames():
         self.iterator = tf.data.make_initializable_iterator(self.dataset)
         self.next_record = self.iterator.get_next()
 
-    def predict(self, path: str):
+    def predict(self, path: str, wav_data=None):
         """Using the model, return the predicted note sequence of a .wav file at the given path.
 
         Args:
-            path (str): The path to a .wav audio file
+            path (str): The path to a .wav audio file. If path is "binary", then a binary must be specified.
+            wav_data (bytes): The binary for the .wav file if that is easier to extract. Defaults to None whqen path is provided.
 
         Returns:
             NoteSequence object containing the prediction. Convertable to MIDI.
         """
-        f = open(path, "rb")
-        wav_data = f.read(Path(path).stat().st_size)
-        f.close()
+        if path == "binary":
+            if wav_data is None:
+                raise ValueError(
+                    "The binary option is chosen but a binary is not provided.")
+        else:
+            f = open(path, "rb")
+            wav_data = f.read()
+            f.close()
 
         ns = note_seq.NoteSequence()
         example_list = [audio_label_data_utils.create_example(
